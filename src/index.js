@@ -6,12 +6,17 @@ const exphbs=require('express-handlebars');
 const methodOverride=require('method-override');
 const multer=require('multer');
 const uuid=require('uuid/v4');
+const session=require('express-session');
+const flash=require('connect-flash');
+const passport=require('passport');
 const {format}=require('timeago.js');
 const app=express();
 
 mongoose.connect('mongodb+srv://eliotalderson_01:3219329910@databasered-6xixf.mongodb.net/test?retryWrites=true&w=majority')
 	.then(db => console.log('conectado a la base de datos'))
 	.catch(err => console.log(err));
+
+require('./passport/local-auth');
 
 app.set('puerto',process.env.PORT || 8000);
 app.set('views',path.join(__dirname,'./views'));
@@ -34,8 +39,21 @@ const storage = multer.diskStorage({
 app.use(multer({
 	storage
 }).single('image'));
+app.use(session({
+	secret: uuid(),
+	resave: true,
+	saveUninitialized: true
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(flash());
 app.use((req,res,next)=>{
-	app.locals.format = formatM;
+	res.locals.success_msg = req.flash('success_msg');
+	res.locals.error_msg = req.flash('error_msg');
+	res.locals.error = req.flash('error');
+	//cuando passport autentica un usuario el guarda la informacion dentro de un objeto en request si no hay un usuario que el valor sea nulo
+	res.locals.user = req.user || null;
+	next();
 });
 app.use(require('./routes/index'));
 app.use(require('./routes/image'));

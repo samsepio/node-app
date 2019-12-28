@@ -1,9 +1,16 @@
 const express=require('express');
+const User=require('../model/database');
+const passport=require('passport');
 const router=express.Router();
 
 router.get('/signin',(req,res,next)=>{
 	res.render('signin');
 });
+router.post('/signin',passport.authenticate('local-signin',{
+	successRedirect: '/profiles',
+	failureRedirect: '/signin',
+	failureFlash: true
+}));
 router.get('/signup',(req,res,next)=>{
 	res.render('signup');
 });
@@ -14,7 +21,7 @@ router.post('/signup',async(req,res,next)=>{
 		errors.push({text: 'todos los campos son hobligatorios'});
 	}
 	if(password.length <= 4){
-		errors.push({text: 'la contraseña debe ser menor de 4 caracteres'});
+		errors.push({text: 'la contraseña debe ser mayor de 4 caracteres'});
 	}
 	if(password != comfirm){
 		errors.push({text: 'las contraseñas no coinciden'});
@@ -22,8 +29,24 @@ router.post('/signup',async(req,res,next)=>{
 	if(errors.length > 0){
 		res.render('signup',{email,name,password,comfirm,errors});
 	}else{
-		res.redirect('/profile');
+		const email = await User.findOne({email: email});
+		if(email){
+			res.redirect('/signup');
+			req.flash('error_msg','el correo ya esta en uso');
+		}else{
+			const newUser = await new User({email,name,password});
+                	newUser.password = newUser.encryptPassword(password);
+                	await newUser.save();
+                	console.log(newUser);
+                	req.flash('success_msg','registrado correctamente');
+                	res.redirect('/profile');
+		}
 	}
+});
+
+router.get('/logout',(req,res,next)=>{
+	req.logout();
+	res.redirect('/');
 });
 
 module.exports=router;

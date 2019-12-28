@@ -1,13 +1,14 @@
 const express=require('express');
 const Image=require('../model/database2');
+const {isAuthenticated}=require('../helpers/auth')
 const router=express.Router();
 
-router.get('/profile',(req,res,next)=>{
+router.get('/profile',isAuthenticated,(req,res,next)=>{
 	res.render('profile');
 });
-router.post('/profile',async(req,res,next)=>{
+router.post('/profile',isAuthenticated,async(req,res,next)=>{
 	const {title,description,descript,year,religion,favorite} = req.body;
-        const errors = []
+        const errors = []	
         if(title.length <= 0 || description.length <= 0 || descript.length <= 0 || year.length <= 0 || religion.length <= 0 || favorite.length <= 0){
                 errors.push({text: 'todos los campos son hobligatorios'});
         }
@@ -33,9 +34,9 @@ router.post('/profile',async(req,res,next)=>{
         	res.redirect('/profiles');
         }
 });
-router.get('/like/:id',async(req,res,next)=>{
+router.get('/like/:id',isAuthenticated,async(req,res,next)=>{
 });
-router.get('/profiles',async(req,res,next)=>{
+router.get('/profiles',isAuthenticated,async(req,res,next)=>{
 	const images = await Image.find();
 	res.render('profiles',{
 		images
